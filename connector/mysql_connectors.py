@@ -8,3 +8,5 @@ def connect_db():
 
     connection = engine.connect()
     print("Success connecting to Delish App Database")
+
+    return connection
