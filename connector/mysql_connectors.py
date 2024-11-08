@@ -1,15 +1,10 @@
 from sqlalchemy import create_engine
-import os
+from config.config import Config
 
-username = os.getenv("DB_USERNAME")
-password = os.getenv("DB_PASSWORD")
-host = os.getenv("DB_HOST")
-database = os.getenv("DB_DATABASE")
 
-print("Connecting to MySQL Database")
-engine = create_engine(
-    f"mysql+mysqlconnector://{username}:{password}@{host}/{database}"
-)
+def connect_db():
+    print("Connecting to MySQL Database")
+    engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
 
-connection = engine.connect()
-print("Success connecting to Delish App Database")
+    connection = engine.connect()
+    print("Success connecting to Delish App Database")
