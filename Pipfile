@@ -12,6 +12,10 @@ mysql-connector-python = "*"
 cerberus = "*"
 gunicorn = "*"
 flask-cors = "*"
+flask-sqlalchemy = "*"
+flask-migrate = "*"
+bcrypt = "*"
+flask-login = "*"
 
 [dev-packages]
 
