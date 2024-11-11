@@ -19,18 +19,15 @@ from models.food import FoodModel
 from models.service import ServiceModel
 from models.ambience import AmbienceModel
 
-from controller.city_controller import city_blueprint
-from controller.auth_controller import auth_blueprint, revoked_tokens
+from controllers.city_controller import city_blueprint
+from controllers.auth_controller import auth_blueprint, revoked_tokens
+from controllers.upload import upload_routes
 
 from flask_cors import CORS
 
 
-from controllers.upload import upload_routes
-
-
 def create_app():
     app = Flask(__name__)
-    app.register_blueprint(upload_routes)
     app.config.from_object(Config)
     app.config["SECRET_KEY"] = "your_secret_key_here"
     jwt = JWTManager(app)
@@ -73,9 +70,6 @@ def create_app():
     init_login_manager(app)
     register_blueprints(app)
 
-    init_login_manager(app)
-    register_blueprints(app)
-
     @app.route("/")
     def hello_world():
         return "Hello World"
@@ -86,25 +80,7 @@ def create_app():
 def register_blueprints(app):
     app.register_blueprint(city_blueprint)
     app.register_blueprint(auth_blueprint)
-
-
-def init_login_manager(app):
-    login_manager = LoginManager()
-    login_manager.init_app(app)
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        Session = sessionmaker(connect_db())
-        s = Session()
-        try:
-            return s.query(UserModel).get(int(user_id))
-        finally:
-            s.close()
-
-
-def register_blueprints(app):
-    app.register_blueprint(city_blueprint)
-    app.register_blueprint(auth_blueprint)
+    app.register_blueprint(upload_routes)
 
 
 def init_login_manager(app):
