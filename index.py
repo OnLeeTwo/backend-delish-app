@@ -18,8 +18,12 @@ from models.service import ServiceModel
 from models.ambience import AmbienceModel
 
 
+from controllers.upload import upload_routes
+
+
 def create_app():
     app = Flask(__name__)
+    app.register_blueprint(upload_routes)
     app.config.from_object(Config)
 
     db.init_app(app)
