@@ -13,7 +13,7 @@ from flask_jwt_extended import (
 )
 from flask_login import logout_user, login_user, current_user
 from cerberus import Validator
-from schemas.user_schema import login_schema, register_schema, update_profile_schema
+from schemas.user_schema import login_email_schema, login_phone_schema, register_schema, update_profile_schema
 from utils.handle_response import ResponseHandler
 
 auth_blueprint = Blueprint("auth_blueprint", __name__)
@@ -53,10 +53,9 @@ def register():
         # Create new user
         new_user = UserModel(
             username=data["username"],
-            pin=data["pin"],
         )
         new_user.set_password(data["password"])
-        # new_user.set_pin(data["pin"]) # Cannot hash pin because the data type is integer
+        new_user.set_pin(data["pin"])  # Cannot hash pin because the data type is integer
         s.add(new_user)
         s.flush()  # Populate the user.id with auto increment-value
 
@@ -67,6 +66,7 @@ def register():
             name=data["name"],
             email=data["email"],
             address=data["address"],
+            phone_number=data["phone_number"],
         )
         s.add(new_user_info)
         s.commit()
@@ -78,6 +78,7 @@ def register():
             "name": new_user_info.name,
             "email": new_user_info.email,
             "address": new_user_info.address,
+            "phone_number": new_user_info.phone_number,
         }
 
         return ResponseHandler.success(data=user_information, status=201)
@@ -94,34 +95,87 @@ def register():
         s.close()
 
 
-@auth_blueprint.post("/api/login")
+@auth_blueprint.post("/api/login-with-email")
 @cross_origin(origin="localhost", headers=["Content-Type", "Authorization"])
-def login():
+def login_email():
     Session = sessionmaker(bind=connect_db())
     s = Session()
     s.begin()
 
     try:
         data = request.get_json()  # Get input data
-        validator = Validator(login_schema)
+        validator = Validator(login_email_schema)
 
         # Check data is valid or invalid
         if not validator.validate(data):
             return ResponseHandler.error(message="Data Invalid!", data=validator.errors, status=400)
 
-        user = s.query(UserModel).filter(UserModel.username == data["username"], UserModel.pin == data["pin"]).first()
+        user_info = s.query(UserInformationModel).filter(UserInformationModel.email == data["email"]).first()
+        if user_info == None:
+            return ResponseHandler.error(message="Email not found!", status=404)
+
+        user = s.query(UserModel).filter(UserModel.id == user_info.user_id).first()
 
         # Checking if the user is available or pin invalid
         if user == None:
-            return ResponseHandler.error(message="User not found or pin incorrect!", status=403)
+            return ResponseHandler.error(message="User not found!", status=404)
         if not user.check_password(data["password"]):
-            return ResponseHandler.error(message="Invalid password!", status=403)
+            return ResponseHandler.error(message="Invalid password!", status=400)
 
         login_user(user)
         access_token = create_access_token(identity=user.id)
 
         return ResponseHandler.success(
-            data={"message": "Login success!", "username": user.username, "access_token": access_token},
+            data={"message": "Login success!", "email": user_info.email, "access_token": access_token},
+            status=200,
+        )
+
+    except Exception as e:
+        s.rollback()
+        return ResponseHandler.error(
+            message="Login failed!",
+            data=str(e),
+            status=500,
+        )
+
+    finally:
+        s.close()
+
+
+@auth_blueprint.post("/api/login-with-phone")
+@cross_origin(origin="localhost", headers=["Content-Type", "Authorization"])
+def login_phone_number():
+    Session = sessionmaker(bind=connect_db())
+    s = Session()
+    s.begin()
+
+    try:
+        data = request.get_json()  # Get input data
+        validator = Validator(login_phone_schema)
+
+        # Check data is valid or invalid
+        if not validator.validate(data):
+            return ResponseHandler.error(message="Data Invalid!", data=validator.errors, status=400)
+
+        user_info = (
+            s.query(UserInformationModel).filter(UserInformationModel.phone_number == data["phone_number"]).first()
+        )
+        if user_info == None:
+            return ResponseHandler.error(message="Phone number not found!", status=404)
+
+        user = s.query(UserModel).filter(UserModel.id == user_info.user_id).first()
+
+        # Checking if the user is available or pin invalid
+        if user == None:
+            return ResponseHandler.error(message="User not found!", status=404)
+        if not user.check_pin(data["pin"]):
+            return ResponseHandler.error(message="Invalid pin!", status=400)
+
+        login_user(user)
+        access_token = create_access_token(identity=user.id)
+
+        return ResponseHandler.success(
+            data={"message": "Login success!", "email": user_info.email, "access_token": access_token},
             status=200,
         )
 
@@ -175,6 +229,7 @@ def show_profile():
             "name": user_info.name,
             "email": user_info.email,
             "address": user_info.address,
+            "phone_number": user_info.phone_number,
             "city": city.city,
         }
 
@@ -225,7 +280,7 @@ def update_profile():
             if existing_email:
                 return ResponseHandler.error(message="Email already exists", status=409)
             else:
-                user.email = new_email
+                user_info.email = new_email
 
         if "username" in data:
             # Check if the username already exists
@@ -238,6 +293,19 @@ def update_profile():
             else:
                 user.username = new_username
 
+        if "phone_number" in data:
+            # Check if the username already exists
+            new_phone_number = data.get("phone_number")
+            existing_phone_number = (
+                s.query(UserInformationModel)
+                .filter(UserInformationModel.phone_number == new_phone_number, UserInformationModel.id != user_id)
+                .first()
+            )
+            if existing_phone_number:
+                return ResponseHandler.error(message="Phone number already exists", status=409)
+            else:
+                user_info.phone_number = new_phone_number
+
         if "city_name" in data:
             # Check if the city name exists
             new_city = data.get("city_name")
@@ -246,6 +314,8 @@ def update_profile():
                 return ResponseHandler.error(message="City unavailable!", status=409)
             else:
                 user_info.city_id = city.id
+        else:
+            city = s.query(CityModel).filter(CityModel.id == user_info.city_id).first()
 
         if "password" in data:
             password = data.get("password")
