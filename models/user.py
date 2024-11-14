@@ -16,7 +16,7 @@ class UserModel(db.Model, UserMixin):
     id = mapped_column(Integer, primary_key=True)
     username = mapped_column(String(255), unique=True, nullable=False)
     password = mapped_column(String(255), unique=False, nullable=False)
-    pin = mapped_column(Integer, unique=False, nullable=False)
+    pin = mapped_column(String(255), unique=False, nullable=False)
     created_at = mapped_column(DateTime, default=gmt_plus_7_now, nullable=False)
     updated_at = mapped_column(DateTime, default=gmt_plus_7_now, onupdate=gmt_plus_7_now, nullable=False)
 
