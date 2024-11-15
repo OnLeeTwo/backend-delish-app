@@ -22,6 +22,7 @@ from models.ambience import AmbienceModel
 from controllers.city_controller import city_blueprint
 from controllers.auth_controller import auth_blueprint, revoked_tokens
 from controllers.upload import upload_routes
+from controllers.restaurant import restaurant_routes
 
 from flask_cors import CORS
 
@@ -79,6 +80,7 @@ def create_app():
 
 def register_blueprints(app):
     app.register_blueprint(city_blueprint)
+    app.register_blueprint(restaurant_routes)
     app.register_blueprint(auth_blueprint)
     app.register_blueprint(upload_routes)
 

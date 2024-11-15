@@ -21,7 +21,7 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@upload_routes.route("/upload", methods=["PUT"])
+@upload_routes.route("/upload", methods=["POST"])
 def upload_file():
     file = request.files["media"]
     if file.filename == "":
