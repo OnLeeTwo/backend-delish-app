@@ -16,6 +16,7 @@ class UserInformationModel(db.Model):
     user_id = mapped_column(Integer, ForeignKey("user.id"), unique=True, nullable=False)
     name = mapped_column(String(255), unique=False, nullable=False)
     email = mapped_column(String(255), unique=True, nullable=False)
+    phone_number = mapped_column(String(255), unique=True, nullable=False)
     address = mapped_column(String(255), unique=False, nullable=True)
     created_at = mapped_column(DateTime, default=gmt_plus_7_now, nullable=False)
     updated_at = mapped_column(DateTime, default=gmt_plus_7_now, onupdate=gmt_plus_7_now, nullable=False)
@@ -30,6 +31,7 @@ class UserInformationModel(db.Model):
             "user_id": self.user_id,
             "name": self.name,
             "email": self.email,
+            "phone_number": self.phone_number,
             "address": self.address,
             "created_at": self.created_at,
             "updated_at": self.updated_at,

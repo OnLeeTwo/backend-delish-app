@@ -3,6 +3,8 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_jwt_extended import JWTManager
 from config.config import Config
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from db import db
 from connector.mysql_connectors import connect_db
@@ -17,24 +19,82 @@ from models.food import FoodModel
 from models.service import ServiceModel
 from models.ambience import AmbienceModel
 
-
+from controllers.city_controller import city_blueprint
+from controllers.auth_controller import auth_blueprint, revoked_tokens
 from controllers.upload import upload_routes
+
+from flask_cors import CORS
 
 
 def create_app():
     app = Flask(__name__)
-    app.register_blueprint(upload_routes)
     app.config.from_object(Config)
+    app.config["SECRET_KEY"] = "your_secret_key_here"
+    jwt = JWTManager(app)
+
+    CORS(
+        app,
+        origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+        supports_credentials=True,
+        methods=["*"],
+        resources={r"/*": {"origins": "*"}},
+        allow_headers=["Content-Type", "Authorization", "XCSRF-Token"],
+    )
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        jti = jwt_payload["jti"]
+        return jti in revoked_tokens
+
+    app.config["SECRET_KEY"] = "your_secret_key_here"
+    jwt = JWTManager(app)
+
+    CORS(
+        app,
+        origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+        supports_credentials=True,
+        methods=["*"],
+        resources={r"/*": {"origins": "*"}},
+        allow_headers=["Content-Type", "Authorization", "XCSRF-Token"],
+    )
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        jti = jwt_payload["jti"]
+        return jti in revoked_tokens
 
     db.init_app(app)
     Migrate(app, db)
     connect_db()
+
+    init_login_manager(app)
+    register_blueprints(app)
 
     @app.route("/")
     def hello_world():
         return "Hello World"
 
     return app
+
+
+def register_blueprints(app):
+    app.register_blueprint(city_blueprint)
+    app.register_blueprint(auth_blueprint)
+    app.register_blueprint(upload_routes)
+
+
+def init_login_manager(app):
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        Session = sessionmaker(connect_db())
+        s = Session()
+        try:
+            return s.query(UserModel).get(int(user_id))
+        finally:
+            s.close()
 
 
 if __name__ == "__main__":
