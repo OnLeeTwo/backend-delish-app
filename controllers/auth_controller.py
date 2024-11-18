@@ -45,6 +45,13 @@ def register():
         if existing_email:
             return ResponseHandler.error(message="Email is taken!", status=409)
 
+        # Check if the phone number is exists in database
+        existing_phone_number = (
+            s.query(UserInformationModel).filter((UserInformationModel.phone_number == data["phone_number"])).first()
+        )
+        if existing_phone_number:
+            return ResponseHandler.error(message="Phone number is taken!", status=409)
+
         # Check if the inputted city is available in database
         city = s.query(CityModel).filter((CityModel.city == data["city_name"])).first()
         if not city:
@@ -73,7 +80,6 @@ def register():
 
         user_information = {
             "user_id": new_user.id,
-            "user_info_id": new_user_info.id,
             "username": new_user.username,
             "name": new_user_info.name,
             "email": new_user_info.email,
@@ -126,7 +132,8 @@ def login_email():
         access_token = create_access_token(identity=user.id)
 
         return ResponseHandler.success(
-            data={"message": "Login success!", "email": user_info.email, "access_token": access_token},
+            data={"access_token": access_token},
+            message="Login Success!",
             status=200,
         )
 
@@ -175,7 +182,8 @@ def login_phone_number():
         access_token = create_access_token(identity=user.id)
 
         return ResponseHandler.success(
-            data={"message": "Login success!", "email": user_info.email, "access_token": access_token},
+            data={"access_token": access_token},
+            message="Login success!",
             status=200,
         )
 
