@@ -37,7 +37,6 @@ def create_restaurant():
 
     try:
         NewRestaurant = RestaurantModel(
-            id=data.get("id"),
             city_id=data.get("city_id"),
             restaurant_name=data.get("restaurant_name"),
             restaurant_status=data.get("restaurant_status"),
