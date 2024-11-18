@@ -2,7 +2,7 @@ from typing import List, Optional, Tuple, Dict
 from controllers.review_repository import ReviewRepository
 
 from models import OverallReviewModel
-from models.enums import ReviewStatusEnum
+from enums.enum import ReviewStatusEnum
 from werkzeug.datastructures import FileStorage
 
 from services.upload import UploadFiles

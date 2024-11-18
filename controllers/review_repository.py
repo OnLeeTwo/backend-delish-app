@@ -8,7 +8,7 @@ from models.service import ServiceModel
 from models.media import MediaModel
 from models.restaurant import RestaurantModel
 
-from models.enums import ReviewStatusEnum
+from enums.enum import ReviewStatusEnum
 
 
 def get_session():
