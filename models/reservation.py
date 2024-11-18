@@ -2,7 +2,7 @@ from db import db
 from sqlalchemy.orm import mapped_column
 from sqlalchemy import Integer, Time, ForeignKey, DateTime, Enum
 from datetime import datetime, timedelta
-from .enums import ReviewStatusEnum
+from enums.enum import ReviewStatusEnum
 
 
 def gmt_plus_7_now():

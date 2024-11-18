@@ -2,7 +2,7 @@ from db import db
 from sqlalchemy.orm import mapped_column, relationship
 from sqlalchemy import Integer, Text, ForeignKey, DateTime, Enum
 from datetime import datetime, timedelta
-from .enums import ReviewStatusEnum
+from enums.enum import ReviewStatusEnum
 
 
 def gmt_plus_7_now():
@@ -15,11 +15,11 @@ class OverallReviewModel(db.Model):
     id = mapped_column(Integer, primary_key=True)
     restaurant_id = mapped_column(Integer, ForeignKey("restaurant.id"), unique=False, nullable=False)
     user_id = mapped_column(Integer, ForeignKey("user.id"), unique=False, nullable=False)
-    score = mapped_column(Integer, unique=False, nullable=False)
+    score = mapped_column(Integer, unique=False, nullable=True)
     review_status = mapped_column(
-        Enum(ReviewStatusEnum), default=ReviewStatusEnum.pending, unique=False, nullable=True
+        Enum(ReviewStatusEnum), default=ReviewStatusEnum.pending, unique=False, nullable=False
     )
-    review_body = mapped_column(Text, unique=False, nullable=False)
+    review_body = mapped_column(Text, unique=False, nullable=True)
     created_at = mapped_column(DateTime, default=gmt_plus_7_now, nullable=False)
     updated_at = mapped_column(DateTime, default=gmt_plus_7_now, onupdate=gmt_plus_7_now, nullable=False)
 
