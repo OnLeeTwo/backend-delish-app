@@ -11,7 +11,7 @@ def gmt_plus_7_now():
 class RestaurantModel(db.Model):
     __tablename__ = "restaurant"
 
-    id = mapped_column(Integer, primary_key=True)
+    id = mapped_column(Integer, primary_key=True, autoincrement=True)
     city_id = mapped_column(Integer, ForeignKey("city.id"), unique=False, nullable=False)
     restaurant_name = mapped_column(String(255), unique=False, nullable=False)
     restaurant_status = mapped_column(Boolean, unique=False, nullable=False)  # True: Open, False: Close
