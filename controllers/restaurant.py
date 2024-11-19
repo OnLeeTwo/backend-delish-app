@@ -1,7 +1,9 @@
 from flask import Blueprint, jsonify, request
 from connector.mysql_connectors import connect_db
 from models.restaurant import RestaurantModel
-from datetime import time
+from datetime import time, datetime
+from sqlalchemy import func
+from math import ceil
 
 from sqlalchemy.orm import sessionmaker
 
@@ -27,9 +29,17 @@ def create_restaurant():
         if field not in data:
             return jsonify({"message": f"{field.replace('_', ' ').title()} is required"}), 400
 
+    # Validate time fields
+    time_format = "%H:%M"
+
+    try:
+        open_time = datetime.strptime(data.get('open_time'), time_format).time()
+        closed_time = datetime.strptime(data.get('closed_time'), time_format).time()
+    except ValueError:
+        return jsonify({"message": "Invalid time format. Use HH:MM (24-hour format)"}), 400
+
     try:
         NewRestaurant = RestaurantModel(
-            id=data.get('id'),
             city_id=data.get('city_id'),
             restaurant_name=data.get('restaurant_name'),
             restaurant_status=data.get('restaurant_status'),
@@ -47,33 +57,49 @@ def create_restaurant():
     
     return { "message": "Restaurant Added" }, 200
 
-@restaurant_routes.route('/restaurants', methods=['GET'])
-def get_restaurants():
+@restaurant_routes.route('/restaurants/<int:page>', methods=['GET'])
+def get_restaurants(page):
     Session = sessionmaker(bind=engine)
     s = Session()
     s.begin()
 
     try:
-        restaurants = s.query(RestaurantModel).all()
+        limit = int(request.args.get('limit', 20))
+
+        total_restaurants = s.query(func.count(RestaurantModel.id)).scalar()
+
+        total_pages = ceil(total_restaurants / limit)
+
+        if page < 1:
+            page = 1
+        elif page > total_pages:
+            page = total_pages
+
+        offset = (page - 1) * limit
+
+        restaurants = (
+            s.query(RestaurantModel).offset(offset).limit(limit).all()
+        )
 
         restaurant_list = [{
             "id": r.id,
             "city_id": r.city_id,
             "restaurant_name": r.restaurant_name,
             "restaurant_status": r.restaurant_status,
-            "open_time": r.open_time.strftime("%H:%M:%S") if isinstance(r.open_time, time) else r.open_time,
-            "closed_time": r.closed_time.strftime("%H:%M:%S") if isinstance(r.closed_time, time) else r.closed_time,
+            "open_time": r.open_time.strftime("%H:%M") if isinstance(r.open_time, time) else r.open_time,
+            "closed_time": r.closed_time.strftime("%H:%M") if isinstance(r.closed_time, time) else r.closed_time,
         } for r in restaurants]
 
         return {
-            "restaurants": restaurant_list
+            "restaurants": restaurant_list,
+            "page": page,
         }, 200
     
     except Exception as e:
         print(e)
-        return { "message": "Unexpected Error" }, 500
+        return {"message": "Unexpected Error"}, 500
     
-@restaurant_routes.route('/restaurants/<id>', methods=['GET'])
+@restaurant_routes.route('/restaurant/<int:id>', methods=['GET'])
 def get_restaurant(id):
     Session = sessionmaker(bind=engine)
     s = Session()
@@ -90,8 +116,8 @@ def get_restaurant(id):
             "city_id": restaurant.city_id,
             "restaurant_name": restaurant.restaurant_name,
             "restaurant_status": restaurant.restaurant_status,
-            "open_time": restaurant.open_time.strftime("%H:%M:%S") if isinstance(restaurant.open_time, time) else restaurant.open_time,
-            "closed_time": restaurant.closed_time.strftime("%H:%M:%S") if isinstance(restaurant.closed_time, time) else restaurant.closed_time,
+            "open_time": restaurant.open_time.strftime("%H:%M") if isinstance(restaurant.open_time, time) else restaurant.open_time,
+            "closed_time": restaurant.closed_time.strftime("%H:%M") if isinstance(restaurant.closed_time, time) else restaurant.closed_time,
         }
 
         return {
