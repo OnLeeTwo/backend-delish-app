@@ -32,7 +32,7 @@ class OverallReviewModel(db.Model):
         DateTime, default=gmt_plus_7_now, onupdate=gmt_plus_7_now, nullable=False
     )
 
-    media = relationship("MediaModel", backref="overall_review", lazy=True)
+    media = relationship("MediaModel", backref="overall_review", lazy="joined")
     food = relationship("FoodModel", backref="overall_review", lazy=True)
     service = relationship("ServiceModel", backref="overall_review", lazy=True)
     ambience = relationship("AmbienceModel", backref="overall_review", lazy=True)
@@ -40,8 +40,8 @@ class OverallReviewModel(db.Model):
     def __repr__(self):
         return f"<Overall Review {self.id}>"
 
-    def to_dictionaries(self):
-        return {
+    def to_dictionaries(self, include_media=False):
+        review_dict = {
             "id": self.id,
             "restaurant_id": self.restaurant_id,
             "user_id": self.user_id,
@@ -51,3 +51,8 @@ class OverallReviewModel(db.Model):
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
+        
+        if include_media:
+            review_dict["media_urls"] = [media.location for media in self.media] if self.media else []
+    
+        return review_dict

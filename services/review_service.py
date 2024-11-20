@@ -1,6 +1,8 @@
 from typing import List, Optional, Tuple, Dict
 from controllers.review_repository import ReviewRepository
 
+from datetime import datetime
+
 from models import OverallReviewModel
 from enums.enum import ReviewStatusEnum
 from werkzeug.datastructures import FileStorage
@@ -57,9 +59,44 @@ class ReviewService:
 
     def get_review(self, review_id: int) -> Optional[OverallReviewModel]:
         return self.repository.find_by_id(review_id)
+    
+    def get_user_reviews(
+        self, 
+        user_id: int, 
+        filters: dict,
+        page: int = DEFAULT_PAGE, 
+        per_page: int = DEFAULT_PER_PAGE,
+        sort_by: str = 'created_at', 
+        sort_order: str = 'desc'
+    ) -> Tuple[List[OverallReviewModel], Dict]:
+        # Validate and sanitize pagination parameters
+        page = max(1, page)
+        per_page = min(max(1, per_page), self.MAX_PER_PAGE)
+
+        # Convert status string to enum if present
+        if filters.get("status"):
+            try:
+                filters["status"] = ReviewStatusEnum[filters["status"]]
+            except KeyError:
+                filters.pop("status")  # Remove invalid status from filters
+
+        # Use repository method to find reviews by user_id
+        return self.repository.find_user_reviews(
+            user_id, 
+            filters,
+            page, 
+            per_page, 
+            sort_by=sort_by, 
+            sort_order=sort_order
+    )
 
     def get_reviews_paginated(
-        self, filters: dict, page: int = DEFAULT_PAGE, per_page: int = DEFAULT_PER_PAGE
+        self, 
+        filters: dict, 
+        page: int = DEFAULT_PAGE, 
+        per_page: int = DEFAULT_PER_PAGE,
+        sort_by: str = 'created_at', 
+        sort_order: str = 'desc'
     ) -> Tuple[List[OverallReviewModel], Dict]:
         # Validate and sanitize pagination parameters
         page = max(1, page)  # Ensure page is at least 1
@@ -74,7 +111,13 @@ class ReviewService:
             except KeyError:
                 filters.pop("status")  # Remove invalid status from filters
 
-        return self.repository.find_all_pagination(filters, page, per_page)
+        return self.repository.find_all_pagination(
+            filters, 
+            page, 
+            per_page, 
+            sort_by=sort_by, 
+            sort_order=sort_order
+    )
 
     def update_review(
         self, review_id: int, data: dict, user_id: int
