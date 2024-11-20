@@ -49,4 +49,4 @@ flask run --debug
 
 ## Documentation
 
-Documentation for usage can be found [here]().
+Documentation for usage can be found [here](https://documenter.getpostman.com/view/34496185/2sAYBRHEkZ).
