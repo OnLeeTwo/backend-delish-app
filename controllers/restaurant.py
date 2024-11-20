@@ -3,6 +3,10 @@ from connector.mysql_connectors import connect_db
 from models.restaurant import RestaurantModel
 from datetime import time
 
+from flask_jwt_extended import (
+    jwt_required
+)
+
 from sqlalchemy.orm import sessionmaker
 
 restaurant_routes = Blueprint("restaurant_routes", __name__)
@@ -11,6 +15,7 @@ engine = connect_db()
 
 
 @restaurant_routes.route("/restaurants", methods=["POST"])
+@jwt_required()
 def create_restaurant():
     Session = sessionmaker(bind=engine)
     s = Session()
