@@ -21,7 +21,6 @@ revoked_tokens = set()
 
 
 @auth_blueprint.post("/api/register")
-@cross_origin(origin="localhost", headers=["Content-Type", "Authorization"])
 def register():
     Session = sessionmaker(bind=connect_db())
     s = Session()
@@ -102,7 +101,6 @@ def register():
 
 
 @auth_blueprint.post("/api/login-with-email")
-@cross_origin(origin="localhost", headers=["Content-Type", "Authorization"])
 def login_email():
     Session = sessionmaker(bind=connect_db())
     s = Session()
@@ -150,7 +148,6 @@ def login_email():
 
 
 @auth_blueprint.post("/api/login-with-phone")
-@cross_origin(origin="localhost", headers=["Content-Type", "Authorization"])
 def login_phone_number():
     Session = sessionmaker(bind=connect_db())
     s = Session()
@@ -200,7 +197,6 @@ def login_phone_number():
 
 
 @auth_blueprint.get("/api/logout")
-@cross_origin(origins=["http://localhost:3000", "http://127.0.0.1:3000"], supports_credentials=True)
 @jwt_required()
 def logout():
     jti = get_jwt()["jti"]  # Get the unique identifier of the token
@@ -215,7 +211,6 @@ def logout():
 
 
 @auth_blueprint.get("/api/profile")
-@cross_origin(origins=["http://localhost:3000", "http://127.0.0.1:3000"], supports_credentials=True)
 @jwt_required()
 def show_profile():
     user_id = get_jwt_identity()
@@ -256,7 +251,6 @@ def show_profile():
 
 
 @auth_blueprint.put("/api/profile")
-@cross_origin(origins=["http://localhost:3000", "http://127.0.0.1:3000"], supports_credentials=True)
 @jwt_required()
 def update_profile():
     user_id = get_jwt_identity()
