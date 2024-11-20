@@ -11,6 +11,8 @@ from db import db
 from connector.mysql_connectors import connect_db
 from models.user import UserModel
 
+import os
+
 from controllers.city_controller import city_blueprint
 from controllers.auth_controller import auth_blueprint, revoked_tokens
 from controllers.restaurant import restaurant_routes
@@ -104,4 +106,4 @@ def init_login_manager(app):
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
