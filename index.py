@@ -30,14 +30,7 @@ def create_app():
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(hours=8)
     jwt = JWTManager(app)
 
-    CORS(
-        app,
-        origins=["*"],
-        supports_credentials=True,
-        methods=["*"],
-        resources={r"/*": {"origins": "*"}},
-        allow_headers=["Content-Type", "Authorization", "XCSRF-Token"],
-    )
+    CORS(app)
 
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
