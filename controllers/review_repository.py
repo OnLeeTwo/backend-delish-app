@@ -10,6 +10,8 @@ from models.restaurant import RestaurantModel
 
 from enums.enum import ReviewStatusEnum
 
+from sqlalchemy.orm import joinedload
+
 
 def get_session():
     Session = sessionmaker(bind=connect_db())
@@ -36,7 +38,11 @@ class ReviewRepository:
         s = get_session()
         s.begin()
         try:
-            return s.query(OverallReviewModel).get(review_id)
+            return s.query(OverallReviewModel)\
+                   .options(joinedload(OverallReviewModel.media))\
+                   .filter(OverallReviewModel.id == review_id)\
+                   .first()
+            return review
         except Exception as e:
             raise e
         finally:
@@ -71,7 +77,12 @@ class ReviewRepository:
             s.close()
 
     def find_all_pagination(
-        self, filters: dict, page: int, per_page: int
+        self, 
+        filters: dict, 
+        page: int, 
+        per_page: int, 
+        sort_by: str = 'created_at', 
+        sort_order: str = 'desc'
     ) -> Tuple[List[OverallReviewModel], dict]:
 
         s = get_session()
@@ -95,9 +106,26 @@ class ReviewRepository:
             total_pages = (total_items + per_page - 1) // per_page
             offset = (page - 1) * per_page
 
+
+            if sort_by == 'created_at':
+                query = query.order_by(
+                    OverallReviewModel.created_at.desc() 
+                    if sort_order.lower() == 'desc' 
+                    else OverallReviewModel.created_at.asc()
+                )
+            else:
+                # For other columns, use standard sorting
+                sort_column = getattr(OverallReviewModel, sort_by, OverallReviewModel.created_at)
+                query = query.order_by(
+                    sort_column.desc() if sort_order.lower() == 'desc' else sort_column.asc()
+                )
+
+            total_items = query.count()
+            total_pages = (total_items + per_page - 1) // per_page
+            offset = (page - 1) * per_page
+
             reviews = (
-                query.order_by(OverallReviewModel.created_at.desc())
-                .offset(offset)
+                query.offset(offset)
                 .limit(per_page)
                 .all()
             )
@@ -118,6 +146,79 @@ class ReviewRepository:
             raise e
         finally:
             s.close()
+
+    def find_user_reviews(
+        self, 
+        user_id: int, 
+        filters: dict,
+        page: int, 
+        per_page: int, 
+        sort_by: str = 'created_at', 
+        sort_order: str = 'desc',
+    ) -> Tuple[List[OverallReviewModel], dict]:
+
+        s = get_session()
+        s.begin()
+
+        try:
+            query = s.query(OverallReviewModel).filter(OverallReviewModel.user_id == user_id)
+
+            if filters:
+                if filters.get("restaurant_id"):
+                    query = query.filter(
+                        OverallReviewModel.restaurant_id == filters["restaurant_id"]
+                    )
+                if filters.get("status"):
+                    query = query.filter(
+                        OverallReviewModel.review_status == filters["status"]
+                    )
+
+            total_items = query.count()
+
+            total_pages = (total_items + per_page - 1) // per_page
+            offset = (page - 1) * per_page
+
+
+            if sort_by == 'created_at':
+                query = query.order_by(
+                    OverallReviewModel.created_at.desc() 
+                    if sort_order.lower() == 'desc' 
+                    else OverallReviewModel.created_at.asc()
+                )
+            else:
+                # For other columns, use standard sorting
+                sort_column = getattr(OverallReviewModel, sort_by, OverallReviewModel.created_at)
+                query = query.order_by(
+                    sort_column.desc() if sort_order.lower() == 'desc' else sort_column.asc()
+                )
+
+            total_items = query.count()
+            total_pages = (total_items + per_page - 1) // per_page
+            offset = (page - 1) * per_page
+
+            reviews = (
+                query.offset(offset)
+                .limit(per_page)
+                .all()
+            )
+
+            pagination_meta = {
+                "page": page,
+                "per_page": per_page,
+                "total_pages": total_pages,
+                "total_items": total_items,
+                "has_next": page < total_pages,
+                "has_prev": page > 1,
+                "next_page": page + 1 if page < total_pages else None,
+                "prev_page": page - 1 if page > 1 else None,
+            }
+
+            return reviews, pagination_meta
+        except Exception as e:
+            raise e
+        finally:
+            s.close()
+
 
     def find_all_filters(self, filters: dict) -> List[OverallReviewModel]:
         s = get_session()

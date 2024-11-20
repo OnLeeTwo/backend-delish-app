@@ -44,6 +44,10 @@ def get_reviews():
             "per_page", type=int, default=ReviewService.DEFAULT_PER_PAGE
         )
 
+        # Get sort parameter
+        sort_by = request.args.get("sort_by", default="created_at")
+        sort_order = request.args.get("sort_order", default="desc")
+
         # Get filters
         filters = {
             "restaurant_id": request.args.get("restaurant_id", type=int),
@@ -56,7 +60,63 @@ def get_reviews():
 
         # Get paginated reviews
         reviews, pagination_meta = review_service.get_reviews_paginated(
-            filters, page, per_page
+            filters, page, per_page, sort_by=sort_by, sort_order=sort_order
+        )
+
+        # Generate pagination links
+        def get_page_url(page_num):
+            if page_num:
+                params = request.args.copy()
+                params["page"] = page_num
+                return f"{request.base_url}?{urlencode(params)}"
+            return None
+
+        pagination_links = {
+            "self": get_page_url(pagination_meta["page"]),
+            "next": get_page_url(pagination_meta["next_page"]),
+            "prev": get_page_url(pagination_meta["prev_page"]),
+            "first": get_page_url(1),
+            "last": get_page_url(pagination_meta["total_pages"]),
+        }
+
+        return {
+            "reviews": [review.to_dictionaries() for review in reviews],
+            "pagination": {
+                "metadata": pagination_meta,
+                "links": pagination_links,
+            },
+        }, 200
+    except Exception as e:
+        return {"message": "Database error occurred", "error": str(e)}, 500
+
+
+@review_blueprint.route("/reviews/user", methods=["GET"])
+@jwt_required()
+def get_current_user_reviews():
+    try:
+        # Get current user ID from JWT
+        user_id = get_jwt_identity()
+
+        # Get pagination parameters
+        page = request.args.get("page", type=int, default=ReviewService.DEFAULT_PAGE)
+        per_page = request.args.get(
+            "per_page", type=int, default=ReviewService.DEFAULT_PER_PAGE
+        )
+
+        filters = {
+            "restaurant_id": request.args.get("restaurant_id", type=int),
+            "status": request.args.get("status"),
+        }
+
+        filters = {k: v for k, v in filters.items() if v is not None}
+
+        # Get sort parameters
+        sort_by = request.args.get("sort_by", default="created_at")
+        sort_order = request.args.get("sort_order", default="desc")
+
+        # Get reviews for current user
+        reviews, pagination_meta = review_service.get_user_reviews(
+             user_id, filters, page, per_page, sort_by=sort_by, sort_order=sort_order, 
         )
 
         # Generate pagination links
@@ -94,7 +154,7 @@ def get_review(review_id):
         if not review:
             return {"message": "Review not found"}, 404
 
-        return {"review": review.to_dictionaries()}, 200
+        return {"review": review.to_dictionaries(include_media=True)}, 200
 
     except Exception as e:
         return {"message": "Database error occurred", "error": str(e)}, 500
