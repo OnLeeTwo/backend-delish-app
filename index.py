@@ -4,39 +4,33 @@ from flask_login import LoginManager
 from flask_jwt_extended import JWTManager
 from config.config import Config
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 
+from datetime import timedelta
 from db import db
 from connector.mysql_connectors import connect_db
 from models.user import UserModel
-from models.city import CityModel
-from models.user_information import UserInformationModel
-from models.restaurant import RestaurantModel
-from models.overall_review import OverallReviewModel
-from models.reservation import ReservationModel
-from models.media import MediaModel
-from models.food import FoodModel
-from models.service import ServiceModel
-from models.ambience import AmbienceModel
 
 from controllers.city_controller import city_blueprint
 from controllers.auth_controller import auth_blueprint, revoked_tokens
 from controllers.restaurant import restaurant_routes
 from controllers.review_controller import review_blueprint
 
-
 from flask_cors import CORS
 
-
 def create_app():
+    load_dotenv()
+
     app = Flask(__name__)
     app.config.from_object(Config)
     app.config["SECRET_KEY"] = "your_secret_key_here"
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=8)
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(hours=8)
     jwt = JWTManager(app)
 
     CORS(
         app,
-        origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+        origins=["*"],
         supports_credentials=True,
         methods=["*"],
         resources={r"/*": {"origins": "*"}},
@@ -47,23 +41,31 @@ def create_app():
     def check_if_token_revoked(jwt_header, jwt_payload):
         jti = jwt_payload["jti"]
         return jti in revoked_tokens
+    
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_data):
+        return ({"message": "Token has expired", "error": "token_expired"}), 401
 
-    app.config["SECRET_KEY"] = "your_secret_key_here"
-    jwt = JWTManager(app)
 
-    CORS(
-        app,
-        origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-        supports_credentials=True,
-        methods=["*"],
-        resources={r"/*": {"origins": "*"}},
-        allow_headers=["Content-Type", "Authorization", "XCSRF-Token"],
-    )
+    @jwt.invalid_token_loader
+    def invalid_token_callback(error):
+        return (
+            ({"message": "Signature verification failed", "error": "invalid_token"}),
+            401,
+        )
 
-    @jwt.token_in_blocklist_loader
-    def check_if_token_revoked(jwt_header, jwt_payload):
-        jti = jwt_payload["jti"]
-        return jti in revoked_tokens
+
+    @jwt.unauthorized_loader
+    def missing_token_callback(error):
+        return (
+            (
+                {
+                    "message": "Request doesnt contain valid token",
+                    "error": "authorization_header",
+                }
+            ),
+            401,
+        )
 
     db.init_app(app)
     Migrate(app, db)

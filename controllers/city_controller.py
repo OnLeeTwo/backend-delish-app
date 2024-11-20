@@ -53,7 +53,9 @@ def show_all_city():
         cities = CityModel.query.all()
         cities_list = [city.to_dictionaries() for city in cities]
 
-        return ResponseHandler.success(data=cities_list, status=200)
+        response_data = {"cities": cities_list}
+
+        return ResponseHandler.success(data=response_data, status=200)
 
     except Exception as e:
         return ResponseHandler.error(

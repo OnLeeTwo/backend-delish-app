@@ -101,6 +101,7 @@ def get_review(review_id):
 
 
 @review_blueprint.route("/reviews/<int:review_id>", methods=["PUT"])
+@jwt_required()
 def submit_review(review_id):
     try:
         review_data = request.form.get("data")
@@ -119,7 +120,7 @@ def submit_review(review_id):
         if error:
             return {"error": error}, 409
 
-        return {"message": "success submiting added the review"}, 200
+        return {"message": "success submiting the review"}, 200
     except Exception as e:
         return {"error": str(e)}, (404)
     except json.JSONDecodeError:
@@ -133,7 +134,7 @@ def delete_review(review_id):
         success, error = review_service.delete_review(review_id, get_jwt_identity())
 
         if not success:
-            return {"message": error}, 404
+            return {"error": error}, 404
 
         return {"message": "Review deleted successfully"}, 200
 
