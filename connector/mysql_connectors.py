@@ -3,10 +3,8 @@ from config.config import Config
 
 
 def connect_db():
-    print("Connecting to MySQL Database")
     engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
 
     connection = engine.connect()
-    print("Success connecting to Delish App Database")
 
     return connection
