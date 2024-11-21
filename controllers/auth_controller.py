@@ -234,6 +234,7 @@ def show_profile():
             "address": user_info.address,
             "phone_number": user_info.phone_number,
             "city": city.city,
+            "created_at" : user_info.created_at
         }
 
         return ResponseHandler.success(data=user_data, status=200)
