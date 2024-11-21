@@ -32,7 +32,7 @@ class ReservationModel(db.Model):
             "restaurant_id": self.restaurant_id,
             "user_id": self.user_id,
             "number_of_people": self.number_of_people,
-            "reservation_time": self.reservation_time,
+            "reservation_time": self.reservation_time.strftime('%H:%M') if self.reservation_time else None,
             "reservation_status": self.reservation_status.name,
             "created_at": self.created_at,
             "updated_at": self.updated_at,

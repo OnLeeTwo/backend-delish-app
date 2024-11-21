@@ -17,6 +17,7 @@ from controllers.city_controller import city_blueprint
 from controllers.auth_controller import auth_blueprint, revoked_tokens
 from controllers.restaurant import restaurant_routes
 from controllers.review_controller import review_blueprint
+from controllers.reservation_controller import reservation_blueprint
 
 from flask_cors import CORS
 
@@ -81,6 +82,7 @@ def register_blueprints(app):
     app.register_blueprint(restaurant_routes)
     app.register_blueprint(auth_blueprint)
     app.register_blueprint(review_blueprint)
+    app.register_blueprint(reservation_blueprint)
 
 
 def init_login_manager(app):
