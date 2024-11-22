@@ -12,6 +12,8 @@ This is a documentation about Delish App API. Created by Team 1 Revou Next for M
 - Imam Hari
 - A'id Fawwaz
 
+The API has been deployed using railways. [API Link] (https://backend-delish-app-production.up.railway.app/)
+
 ## Start the API
 
 1. Clone git using https or SSH
